@@ -1,0 +1,12 @@
+1) Использование формата для озера данных: Вместо parquet можно использовать Delta Lake. Изменение будет выглядеть так:
+src.write.format("delta").mode("overwrite").partitionBy("eff_to_month", "eff_from_month").save(temp_table)
+2) Оптимизация конфигурации Spark: Настроить параметры конфигурации для оптимальной обработки больших объемов данных:
+conf.set("spark.sql.files.maxPartitionBytes", "1GB")
+conf.set("spark.sql.shuffle.partitions", "200")
+3) Альтернативный алгоритм merge: Вместо анти-джойнов можно использовать merge:
+from delta.tables import *
+delta_table = DeltaTable.forPath(spark, init_table)
+delta_table.alias("tgt").merge(
+    src.alias("src"),
+    "tgt.id = src.id AND tgt.eff_from_dt = src.eff_from_dt"
+).whenNotMatchedInsertAll().execute()
